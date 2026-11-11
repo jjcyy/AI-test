@@ -1,0 +1,9 @@
+{
+  "name": "lunch-vote",
+  "private": true,
+  "description": "SKB AI Camp 점심 메뉴 투표 (Vercel + Supabase)",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "postgres": "3.4.9"
+  }
+}
