@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>점심 메뉴 투표</title>
+<style>
+  :root {
+    --skb-red: #EA002C;
+    --skb-orange: #F47725;
+    --text-primary: #202124;
+    --text-secondary: #5F6368;
+    --bg-page: #F7F8FA;
+    --bg-card: #FFFFFF;
+    --border: #E5E7EB;
+    --bar-track: #EEF0F3;
+    --bar-other: #9AA0A6;
+    --status-good: #287D4E;
+    --status-bad: #B42318;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { border-top: 4px solid var(--skb-red); padding-top: 16px; margin-bottom: 20px; }
+  .eyebrow { font-size: 13px; color: var(--skb-red); font-weight: 700; margin: 0; }
+  h1 { font-size: 26px; margin: 4px 0 4px; }
+  .sub { color: var(--text-secondary); margin: 0; font-size: 14px; }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type="text"] {
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: 10px 12px;
+    font: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  input[type="text"]:focus { outline: 2px solid var(--skb-orange); border-color: transparent; }
+  button {
+    font: inherit;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--text-secondary); }
+  button.primary { background: var(--skb-red); border-color: var(--skb-red); color: #fff; font-weight: 700; }
+  button.primary:hover { background: #C80025; }
+  button.ghost { border: none; color: var(--text-secondary); padding: 6px 8px; }
+  button.ghost:hover { color: var(--status-bad); }
+  .msg { min-height: 20px; font-size: 13px; margin: 8px 0 0; }
+  .msg.bad { color: var(--status-bad); }
+  .msg.good { color: var(--status-good); }
+
+  .menu-list { list-style: none; margin: 0; padding: 0; }
+  .menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .menu-item:last-child { border-bottom: none; }
+  .menu-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+  .menu-count { color: var(--text-secondary); font-size: 14px; white-space: nowrap; }
+  .empty { color: var(--text-secondary); font-size: 14px; margin: 0; }
+
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .total { color: var(--text-secondary); font-size: 14px; }
+  .bars { display: grid; gap: 12px; margin-top: 8px; }
+  .bar-label { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; margin-bottom: 4px; }
+  .bar-label .name { overflow-wrap: anywhere; }
+  .bar-label .val { white-space: nowrap; color: var(--text-secondary); }
+  .bar-track { background: var(--bar-track); border-radius: 6px; height: 22px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--bar-other); border-radius: 6px; transition: width .3s ease; }
+  .bar.lead .bar-fill { background: var(--skb-red); }
+  .bar.lead .name { font-weight: 700; }
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    color: var(--skb-red); border: 1px solid var(--skb-red);
+    border-radius: 999px; padding: 0 8px; margin-left: 6px;
+  }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin-top: 12px; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+
+  .footer-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .note { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+  #storageNote { color: var(--status-bad); }
+  .menu-item.mine .menu-name::after {
+    content: "내 투표"; font-size: 12px; font-weight: 700; color: var(--skb-orange);
+    border: 1px solid var(--skb-orange); border-radius: 999px; padding: 0 8px; margin-left: 6px;
+  }
+  button.voted { background: var(--bg-card); color: var(--skb-red); border-color: var(--skb-red); }
+  button:disabled { opacity: .6; cursor: wait; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">SKB AI Camp</p>
+    <h1>우리 팀 점심 메뉴 투표</h1>
+    <p class="sub">메뉴를 추가하고 먹고 싶은 메뉴에 투표하세요. 결과는 아래 막대그래프로 바로 보여요.</p>
+  </header>
+
+  <section class="card">
+    <h2>메뉴 추가</h2>
+    <form id="addForm" class="row" autocomplete="off">
+      <input id="menuInput" type="text" maxlength="30" placeholder="예: 김치찌개" aria-label="메뉴 이름">
+      <button type="submit" class="primary">추가</button>
+    </form>
+    <p id="addMsg" class="msg" role="status"></p>
+  </section>
+
+  <section class="card">
+    <h2>투표하기</h2>
+    <ul id="menuList" class="menu-list"></ul>
+  </section>
+
+  <section class="card">
+    <div class="chart-head">
+      <h2>투표 결과</h2>
+      <span id="total" class="total"></span>
+    </div>
+    <div id="bars" class="bars" aria-live="polite"></div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--skb-red)"></span>1위 (표시: 1위 배지)</span>
+      <span><span class="swatch" style="background:var(--bar-other)"></span>그 외 메뉴</span>
+      <span>단위: 표</span>
+    </div>
+  </section>
+
+  <div class="footer-actions">
+    <button type="button" id="resetVotes">투표만 초기화</button>
+    <button type="button" id="resetAll">전체 초기화</button>
+  </div>
+  <p class="note">투표는 같은 주소로 들어온 모든 사람과 공유돼요. 한 브라우저에서 한 표만 낼 수 있고, 다른 메뉴를 누르면 표가 옮겨가요. 결과는 5초마다 새로 불러와요.</p>
+  <p id="storageNote" class="note" hidden>⚠ 저장소가 아직 연결되지 않아 임시 메모리에 저장 중이에요. 서버가 다시 시작되면 투표가 사라질 수 있어요.</p>
+</div>
+
+<script>
+(function () {
+  var API = '/api/state';
+  var MY_KEY = 'skb-lunch-vote-mine-v2'; // 이 브라우저의 투표 기록 {round, name}
+  var state = { menus: [], round: 0 };
+  var busy = false;
+
+  function getMine() {
+    try {
+      var v = JSON.parse(localStorage.getItem(MY_KEY) || 'null');
+      if (v && v.round === state.round) return v.name;
+    } catch (e) {}
+    return '';
+  }
+  function setMine(name) {
+    try { localStorage.setItem(MY_KEY, JSON.stringify({ round: state.round, name: name })); } catch (e) {}
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function showMsg(text, kind) {
+    var m = document.getElementById('addMsg');
+    m.textContent = text;
+    m.className = 'msg ' + (kind || '');
+  }
+
+  function apply(data) {
+    state = data;
+    document.getElementById('storageNote').hidden = data.storage !== 'memory';
+    render();
+  }
+
+  function refresh() {
+    if (busy) return;
+    return fetch(API, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.menus) apply(d); })
+      .catch(function () { showMsg('서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.', 'bad'); });
+  }
+
+  function send(body) {
+    busy = true;
+    setButtons(true);
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (x.d.menus) apply(x.d);
+        if (!x.ok) throw new Error(x.d.error || '요청을 처리하지 못했어요.');
+        return x.d;
+      })
+      .finally(function () { busy = false; setButtons(false); });
+  }
+
+  function setButtons(disabled) {
+    document.querySelectorAll('button').forEach(function (b) { b.disabled = disabled; });
+  }
+
+  function render() {
+    var list = document.getElementById('menuList');
+    var bars = document.getElementById('bars');
+    var mine = getMine();
+    list.innerHTML = '';
+    bars.innerHTML = '';
+
+    var total = state.menus.reduce(function (s, m) { return s + m.votes; }, 0);
+    var max = state.menus.reduce(function (s, m) { return Math.max(s, m.votes); }, 0);
+    document.getElementById('total').textContent = '메뉴 ' + state.menus.length + '개 · 총 ' + total + '표';
+
+    if (state.menus.length === 0) {
+      list.appendChild(el('p', 'empty', '아직 메뉴가 없어요. 위에서 메뉴를 추가해 주세요.'));
+      bars.appendChild(el('p', 'empty', '투표할 메뉴가 없어요.'));
+      return;
+    }
+
+    state.menus.forEach(function (m) {
+      var isMine = m.name === mine;
+      var li = el('li', 'menu-item' + (isMine ? ' mine' : ''));
+      li.appendChild(el('span', 'menu-name', m.name));
+      li.appendChild(el('span', 'menu-count', m.votes + '표'));
+      var vote = el('button', isMine ? 'voted' : 'primary', isMine ? '투표함' : (mine ? '여기로 옮기기' : '투표'));
+      vote.type = 'button';
+      vote.setAttribute('aria-label', m.name + (isMine ? '에 투표함' : '에 투표'));
+      vote.onclick = function () {
+        if (isMine) return;
+        send({ action: 'vote', name: m.name, prev: mine, round: state.round })
+          .then(function () { setMine(m.name); render(); showMsg('"' + m.name + '"에 투표했어요.', 'good'); })
+          .catch(function (e) { showMsg(e.message, 'bad'); });
+      };
+      var del = el('button', 'ghost', '삭제');
+      del.type = 'button';
+      del.setAttribute('aria-label', m.name + ' 삭제');
+      del.onclick = function () {
+        if (!confirm('"' + m.name + '" 메뉴와 투표 ' + m.votes + '표를 모든 사람 화면에서 삭제할까요?')) return;
+        send({ action: 'delete', name: m.name })
+          .then(function () { if (isMine) setMine(''); render(); })
+          .catch(function (e) { showMsg(e.message, 'bad'); });
+      };
+      li.appendChild(vote);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+
+    var sorted = state.menus.slice().sort(function (a, b) { return b.votes - a.votes; });
+    sorted.forEach(function (m) {
+      var lead = max > 0 && m.votes === max;
+      var pct = total > 0 ? Math.round(m.votes / total * 1000) / 10 : 0;
+      var bar = el('div', 'bar' + (lead ? ' lead' : ''));
+      var label = el('div', 'bar-label');
+      var name = el('span', 'name', m.name);
+      if (lead) name.appendChild(el('span', 'badge', '1위'));
+      label.appendChild(name);
+      label.appendChild(el('span', 'val', m.votes + '표 (' + pct + '%)'));
+      var track = el('div', 'bar-track');
+      var fill = el('div', 'bar-fill');
+      fill.style.width = (max > 0 ? (m.votes / max * 100) : 0) + '%';
+      track.appendChild(fill);
+      bar.appendChild(label);
+      bar.appendChild(track);
+      bars.appendChild(bar);
+    });
+  }
+
+  document.getElementById('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = document.getElementById('menuInput');
+    var name = input.value.trim().replace(/\s+/g, ' ');
+    if (!name) { showMsg('메뉴 이름을 입력해 주세요.', 'bad'); return; }
+    send({ action: 'add', name: name })
+      .then(function () { input.value = ''; input.focus(); showMsg('"' + name + '" 메뉴를 추가했어요.', 'good'); })
+      .catch(function (err) { showMsg(err.message, 'bad'); });
+  });
+
+  document.getElementById('resetVotes').onclick = function () {
+    if (!confirm('모든 사람의 투표를 0으로 되돌릴까요?')) return;
+    send({ action: 'resetVotes' }).then(function () { showMsg('투표를 초기화했어요.', 'good'); })
+      .catch(function (e) { showMsg(e.message, 'bad'); });
+  };
+
+  document.getElementById('resetAll').onclick = function () {
+    if (!confirm('메뉴와 투표를 모두 지우고 기본 메뉴 3개로 되돌릴까요? 모든 사람 화면에 적용돼요.')) return;
+    send({ action: 'resetAll' }).then(function () { showMsg('처음 상태로 되돌렸어요.', 'good'); })
+      .catch(function (e) { showMsg(e.message, 'bad'); });
+  };
+
+  refresh();
+  setInterval(refresh, 5000);
+})();
+</script>
+</body>
+</html>
